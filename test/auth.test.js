@@ -13,18 +13,8 @@ const User = require("../models/user");
 
 chai.use(chaiHttp);
 
-describe("Functional Tests", function () {
-  /*Testing to get our feet wet(and make sure the sever is setup properly)
-   */
-  it("#Testing server is available", function (done) {
-    chai
-      .request(server)
-      .get("/")
-      .end(function (err, res) {
-        expect(res.status).to.equal(200);
-        done();
-      });
-  });
+describe("User Register and Login Tests", function () {
+ 
   describe(`Testing /api/user/register endpoint`, function () {
     before(function (done) {
       mongoose
