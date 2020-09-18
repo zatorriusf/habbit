@@ -22,6 +22,9 @@ app.get("/", (req, res) => {
 //creating a home for our registation and autorization things to live
 const authRoute = require("./routes/auth");
 app.use("/api/user", authRoute);
+//habit routes
+const habitRoute = require("./routes/habits");
+app.use("/api/habits", habitRoute);
 app.listen(3000, () => {
   console.log("listening on 3000");
 });
