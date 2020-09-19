@@ -6,8 +6,19 @@ const User = require("../models/user");
 
 router
   .route("/")
-  .get((req, res) => {
-    res.status(200).send(`habit get route`);
+  .get(async (req, res) => {
+    const {userId} = req.body;
+    if(!userId){
+      res.status(400).send('invalid user');
+      return;
+    }
+    const user = await User.findById(userId);
+    if(user.habits === 0){
+      res.status(200).send('no habits yet. How about we create one')
+      return
+    }
+
+    res.status(200).send(user.habits);
   })
   .post(async (req, res) => {
     
@@ -28,12 +39,8 @@ router
             }
         }); 
     } else {
-        
         res.status(400).send('failed');
-
     }
-    
-    
   });
 
-module.exports = router;
+  module.exports = router;

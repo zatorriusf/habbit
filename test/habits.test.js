@@ -29,7 +29,7 @@ describe("#Testing habit routes and such", function () {
       useUnifiedTopology: true,
     });
     await User.deleteMany();
-    const user = await User(testUser).save();
+    const user = await new User(testUser).save();
     goodTestHabit.userId = user._id;
   });
   describe("##creating habits", function () {
@@ -55,8 +55,8 @@ describe("#Testing habit routes and such", function () {
     describe("###bad habit validation check", function () {
       it("no userId present in request", function (done) {
         const noUserIdHabit = {
-          title: `we're doing a bad thing`,
-          frequency: "monthly",
+          title: "we're doing a bad thing",
+          frequency: "monthly"
         };
         chai
           .request(server)
@@ -64,6 +64,7 @@ describe("#Testing habit routes and such", function () {
           .send(noUserIdHabit)
           .end(function (err, res) {
             expect(res.status).to.equal(400);
+            expect(res.text).to.equal('invalid request');
             done();
           });
       });
@@ -126,4 +127,19 @@ describe("#Testing habit routes and such", function () {
       });
     });
   });
+  describe(`##bringing back the habits`,function(){
+    const {userId} = goodTestHabit;
+    it(`get habits`, function (done) {
+      console.log(goodTestHabit.userId)
+      chai
+        .request(server)
+        .get("/api/habits")
+        .send({userId : goodTestHabit.userId})
+        .end(function (err, res) {
+          expect(res.status).to.equal(200);
+          expect(res.body).to.be.an('array');
+          done();
+        });
+    });
+  })
 });
