@@ -45,7 +45,7 @@ router
     }
   })
   //update existing habit
-  .put(async (req,res)=>{
+  .patch(async (req,res)=>{
     const{habitId,title,frequency} = req.body;
     if(!habitId || !title ||['daily','weekly','bi-weekly','monthly'].indexOf(frequency) ===-1){
       res.status(400).send(`invalid request`);
@@ -70,6 +70,8 @@ router
   //delete habits
   .delete();
 router.route("/track")
+  .patch((req,res)=>{
+    res.send('so this works')
+  })
       //tracking ha
-      .put()
   module.exports = router;
