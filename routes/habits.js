@@ -51,10 +51,6 @@ router
       res.status(400).send(`invalid request`);
       return;
     }
-    if(!habitId || !title ||['daily','weekly','bi-weekly','monthly'].indexOf(frequency) ===-1){
-      res.status(400).send(`invalid request`);
-      return;
-    }
     const user = await User.findOne({'habits._id' : habitId});
     const habitIndex = user.habits.findIndex(id => id=habitId);
     user.habits[habitIndex].title = title;
@@ -70,8 +66,53 @@ router
   //delete habits
   .delete();
 router.route("/track")
-  .patch((req,res)=>{
-    res.send('so this works')
+  //tracking habits
+  .patch(async (req,res)=>{
+    
+    const {habitId} = req.body
+    if(!habitId){
+      res.status(400).send('invalid request');
+      return;
+    }
+    
+    const user = await User.findOne({'habits._id' : habitId});
+    const habitIndex = user.habits.findIndex(id => id=habitId);
+    let habit = user.habits[habitIndex];
+    if(habit.lastActivity){
+      let nextAvialableUpdate = new Date(habit.lastActivity);
+    switch(habit.frequency){
+      case 'daily':
+          nextAvialableUpdate.setDate(nextAvialableUpdate.getDate() + 1);
+          break;
+      case 'weekly':
+        nextAvialableUpdate.setDate(nextAvialableUpdate.getDate() + 7);
+        break;
+      case 'bi-weekly':
+        nextAvialableUpdate.setDate(nextAvialableUpdate.getDate() + 14);
+        break;
+      case 'monthly':
+        nextAvialableUpdate.setDate(nextAvialableUpdate.getDate() + 30);
+        break;
+      default:
+        res.status(400).send('invalid frequency');
+        return;
+    }
+
+      if(Date.now() < nextAvialableUpdate.getTime()){
+      res.status(400).send(`you haven't waited long enough to track again`);
+      return;
+      }
+    }
+    
+    habit.lastActivity = Date.now();
+    habit.totalActivity++;
+    habit.currentStreak++;
+    if(habit.currentStreak > habit.longestStreak){
+      habit.longestStreak = habit.currentStreak;
+    }
+    user.habits[habitIndex] = habit;
+    const updatedUser = await user.save();
+    res.send(updatedUser);
   })
-      //tracking ha
+      
   module.exports = router;

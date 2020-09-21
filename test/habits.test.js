@@ -20,7 +20,7 @@ chai.use(chaiHttp);
 describe("#Testing habit routes and such", function () {
   const goodTestHabit = {
     title: "test",
-    frequency: "daily",
+    frequency: "monthly",
     userId: null,
   };
   //object to hold the result from the good habit post
@@ -182,11 +182,11 @@ describe("#Testing habit routes and such", function () {
           done();
         });
     });
-    it("updating frequency", function (done) {
+    it("updating frequency to daily", function (done) {
       const updateObj = {
         habitId: goodHabitReturn._id,
         title: goodHabitReturn.title,
-        frequency: "monthly",
+        frequency: "daily",
       };
       chai
         .request(server)
@@ -255,4 +255,41 @@ describe("#Testing habit routes and such", function () {
       });
     });
   });
+  describe("##Testing Habit Tracking", function(){
+    it("successful tracking",function(done){
+      chai
+          .request(server)
+          .patch("/api/habits/track")
+          .send({ habitId: goodHabitReturn._id })
+          .end(function (err, res) {
+            expect(res.status).to.equal(200);
+            expect(res.body).to.be.an('object');
+            done();
+          });
+    });
+    describe("###Tracking fail cases", function(){
+      it("tracking before the frequency has passed",function(done){
+        chai
+            .request(server)
+            .patch("/api/habits/track")
+            .send({ habitId: goodHabitReturn._id })
+            .end(function (err, res) {
+              expect(res.status).to.equal(400);
+              expect(res.text).to.equal(`you haven't waited long enough to track again`);
+              done();
+            });
+      });
+      it("Missing habitId",function(done){
+        chai
+          .request(server)
+          .patch("/api/habits/track")
+          .send({habitId : null})
+          .end(function (err,res){
+            expect(res.status).to.equal(400);
+            expect(res.text).to.equal('invalid request');
+            done();
+          });
+      });
+    });
+  })
 });
