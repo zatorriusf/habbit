@@ -23,6 +23,8 @@ describe("#Testing habit routes and such", function () {
     frequency: "daily",
     userId: null,
   };
+  //object to hold the result from the good habit post
+  let goodHabitReturn;
   before(async function () {
     await mongoose.connect(process.env.TEST_MONGO_URI, {
       useNewUrlParser: true,
@@ -32,6 +34,7 @@ describe("#Testing habit routes and such", function () {
     const user = await new User(testUser).save();
     goodTestHabit.userId = user._id;
   });
+
   describe("##creating habits", function () {
     it(`post valid habits`, function (done) {
       chai
@@ -48,6 +51,9 @@ describe("#Testing habit routes and such", function () {
             .to.have.property("frequency")
             .and.equal(goodTestHabit.frequency);
           expect(res.body).to.have.property("totalActivity").and.equal(0);
+
+          goodHabitReturn = res.body;
+
           done();
         });
     });
@@ -56,7 +62,7 @@ describe("#Testing habit routes and such", function () {
       it("no userId present in request", function (done) {
         const noUserIdHabit = {
           title: "we're doing a bad thing",
-          frequency: "monthly"
+          frequency: "monthly",
         };
         chai
           .request(server)
@@ -64,7 +70,7 @@ describe("#Testing habit routes and such", function () {
           .send(noUserIdHabit)
           .end(function (err, res) {
             expect(res.status).to.equal(400);
-            expect(res.text).to.equal('invalid request');
+            expect(res.text).to.equal("invalid request");
             done();
           });
       });
@@ -86,7 +92,7 @@ describe("#Testing habit routes and such", function () {
       it("no frequency present in request", function (done) {
         const noUserIdHabit = {
           title: `we're doing a bad thing`,
-          userId: goodTestHabit.userId
+          userId: goodTestHabit.userId,
         };
         chai
           .request(server)
@@ -100,7 +106,7 @@ describe("#Testing habit routes and such", function () {
       it("no frequency present in request", function (done) {
         const noUserIdHabit = {
           title: `we're doing a bad thing`,
-          userId: goodTestHabit.userId
+          userId: goodTestHabit.userId,
         };
         chai
           .request(server)
@@ -114,7 +120,7 @@ describe("#Testing habit routes and such", function () {
       it("no title present in request", function (done) {
         const noUserIdHabit = {
           frequency: "bi-monthly",
-          userId: goodTestHabit.userId
+          userId: goodTestHabit.userId,
         };
         chai
           .request(server)
@@ -127,19 +133,123 @@ describe("#Testing habit routes and such", function () {
       });
     });
   });
-  describe(`##bringing back the habits`,function(){
-    const {userId} = goodTestHabit;
+  describe(`##bringing back the habits`, function () {
     it(`get habits`, function (done) {
-      console.log(goodTestHabit.userId)
       chai
         .request(server)
         .get("/api/habits")
-        .send({userId : goodTestHabit.userId})
+        .send({ userId: goodTestHabit.userId })
         .end(function (err, res) {
           expect(res.status).to.equal(200);
-          expect(res.body).to.be.an('array');
+          expect(res.body).to.be.an("array");
           done();
         });
     });
-  })
+    describe("###failing habit get", function () {
+      it("missing userId", function (done) {
+        chai
+          .request(server)
+          .get("/api/habits")
+          .send({ userId: null })
+          .end(function (err, res) {
+            expect(res.status).to.equal(400);
+            expect(res.text).to.equal("invalid user");
+            done();
+          });
+      });
+    });
+  });
+  describe("##Updating an existing habit", function () {
+    it("updating title",function(done){
+      const updateObj = {
+          habitId: goodHabitReturn._id,
+          title : "Updated title via Test",
+          frequency : goodHabitReturn.frequency
+        }
+      chai
+        .request(server)
+        .put("/api/habits")
+        .send(updateObj)
+        .end(function (err,res){
+          expect(res.status).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body).to.have.property('title')
+            .and.not.equal(goodHabitReturn.title);
+          expect(res.body).to.have.property('frequency')
+            .and.equal(goodHabitReturn.frequency);
+          done();
+        });
+    });
+    it("updating frequency",function(done){
+      const updateObj = {
+          habitId: goodHabitReturn._id,
+          title : goodHabitReturn.title,
+          frequency : 'monthly'
+        }
+      chai
+        .request(server)
+        .put("/api/habits")
+        .send(updateObj)
+        .end(function (err,res){
+          expect(res.status).to.equal(200);
+          expect(res.body).to.be.an('object');
+          expect(res.body).to.have.property('title')
+            .and.equal(goodHabitReturn.title);
+          expect(res.body).to.have.property('frequency')
+            .and.not.equal(goodHabitReturn.frequency);
+          done();
+        });
+    });
+    describe("###Fail checks", function () {
+      
+      it("missing habitId", function (done) {
+        const failedupdate1 = {
+          habitId: null,
+          title : "Updated title via Test",
+          frequency : goodHabitReturn.frequency
+        }
+        chai
+          .request(server)
+          .put("/api/habits")
+          .send(failedupdate1)
+          .end(function (err, res) {
+            expect(res.status).to.equal(400);
+            expect(res.text).to.equal('invalid request');
+            done();
+          });
+      });
+    });
+    it("missing title", function (done) {
+      const failedupdate1 = {
+        habitId: goodHabitReturn._id,
+        title : null,
+        frequency : goodHabitReturn.frequency
+      }
+      chai
+        .request(server)
+        .put("/api/habits")
+        .send(failedupdate1)
+        .end(function (err, res) {
+          expect(res.status).to.equal(400);
+          expect(res.text).to.equal('invalid request');
+          done();
+        });
+    });
+    it("missing frequency", function (done) {
+      const failedupdate1 = {
+        habitId: goodHabitReturn._id,
+        title : "Updated title via Test",
+        frequency : null
+      }
+      chai
+        .request(server)
+        .put("/api/habits")
+        .send(failedupdate1)
+        .end(function (err, res) {
+          expect(res.status).to.equal(400);
+          expect(res.text).to.equal('invalid request');
+          done();
+        });
+    });
+  });
 });
