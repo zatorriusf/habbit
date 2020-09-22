@@ -64,7 +64,21 @@ router
     
   })
   //delete habits
-  .delete();
+  .delete(async (req,res)=>{
+    const {userId,habitIds} = req.body;
+    if(!userId || habitIds.length === 0){
+      res.status(400).send('invalid request');
+      return;
+    }
+    const user = await User.findById(userId)
+                                .catch(err=>{
+                                  res.status(400).send(err)
+                                });
+    const originalLenght = user.habits.length;
+    user.habits = user.habits.filter(habit => !habitIds.includes(habit._id.toString()));
+    await user.save().catch(err => res.send(err));
+    res.status(200).send(`${originalLenght - user.habits.length} habit(s) removed`);
+  });
 router.route("/track")
   //tracking habits
   .patch(async (req,res)=>{

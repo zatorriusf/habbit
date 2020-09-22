@@ -291,5 +291,57 @@ describe("#Testing habit routes and such", function () {
           });
       });
     });
-  })
+  });
+  describe('##Testing Habit Deletes',function(){
+    describe('###Delete fails',function(){
+      it('no ids passed',function(done){
+        chai
+          .request(server)
+          .delete("/api/habits")
+          .send({
+            userId: goodTestHabit.userId,
+            habitIds : []
+          })
+          .end(function (err,res){
+            expect(res.status).to.equal(400);
+            expect(res.text).to.equal('invalid request');
+            done();
+          });
+      });
+      it('missing userId',function(done){
+        chai
+          .request(server)
+          .delete("/api/habits")
+          .send({
+            userId: null,
+            habitIds : [goodHabitReturn._id]
+          })
+          .end(function (err,res){
+            expect(res.status).to.equal(400);
+            expect(res.text).to.equal('invalid request');
+            done();
+          });
+      });
+    });
+    describe("###successfuly delete",function(){
+      it(`let's delete a habit`,function(done){
+        const deleteObj = {
+          userId: goodTestHabit.userId,
+          habitIds : [goodHabitReturn._id]
+        }
+        chai
+          .request(server)
+          .delete("/api/habits")
+          .send({
+            userId: goodTestHabit.userId,
+            habitIds : [goodHabitReturn._id]
+          })
+          .end(function(err,res){
+            expect(res.status).to.equal(200);
+            expect(res.text).to.equal(`${deleteObj.habitIds.length} habit(s) removed`);
+            done();
+          })
+      });
+    }); 
+  });
 });
