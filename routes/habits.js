@@ -8,7 +8,7 @@ router
   .route("/")
   //get all habits for a user
   .get(async (req, res) => {
-    const {userId} = req.body;
+    const userId = req.userId;
     if(!userId){
       res.status(400).send('invalid user');
       return;
@@ -24,7 +24,8 @@ router
   //post new habit
   .post(async (req, res) => {
     
-    const {userId,title,frequency} = req.body;
+    const {title,frequency} = req.body;
+    const userId = req.userId;
     if(!userId || !title ||['daily','weekly','bi-weekly','monthly'].indexOf(frequency) ===-1){
       res.status(400).send(`invalid request`);
       return;
@@ -65,7 +66,8 @@ router
   })
   //delete habits
   .delete(async (req,res)=>{
-    const {userId,habitIds} = req.body;
+    const {habitIds} = req.body;
+    const userId = req.userId
     if(!userId || habitIds.length === 0){
       res.status(400).send('invalid request');
       return;

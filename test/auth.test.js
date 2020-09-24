@@ -63,7 +63,7 @@ describe("User Register and Login Tests", function () {
           expect(res.status).to.equal(200);
           expect(res.body).to.be.an("object");
           expect(res.body).to.have.property("email").and.equal(user.email);
-          expect(res.body).to.have.property("lastLogin").and.at.equal(new Date().toDateString());
+          expect(res.body).to.have.property("token");
           done();
         });
     });

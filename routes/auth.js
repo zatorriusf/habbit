@@ -2,6 +2,7 @@
 const router = require('express').Router();
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 //models
 const User = require('../models/user');
 
@@ -35,10 +36,11 @@ router.post('/login', async (req,res) => {
       if (matchedPass) {
         //creating and send JSONToken
         user.lastLogin = new Date();
-        await user.save()
+        await user.save();
+        const token = jwt.sign({userId : user._id},process.env.JWT_TOKEN_SECRET);
         res.status(200).json({
             email : user.email,
-            lastLogin : user.lastLogin.toDateString()
+            token : token
         })
       } else {
         res.status(400).send(`invalid username or password`);

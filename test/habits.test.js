@@ -1,5 +1,6 @@
 process.env.NODE_ENV = "test";
 
+const jwt = require("jsonwebtoken");
 const chaiHttp = require("chai-http");
 const mocha = require("mocha");
 const chai = require("chai"),
@@ -21,10 +22,10 @@ describe("#Testing habit routes and such", function () {
   const goodTestHabit = {
     title: "test",
     frequency: "monthly",
-    userId: null,
   };
   //object to hold the result from the good habit post
   let goodHabitReturn;
+  let token;
   before(async function () {
     await mongoose.connect(process.env.TEST_MONGO_URI, {
       useNewUrlParser: true,
@@ -33,6 +34,7 @@ describe("#Testing habit routes and such", function () {
     await User.deleteMany();
     const user = await new User(testUser).save();
     goodTestHabit.userId = user._id;
+    token = jwt.sign({ userId: user._id }, process.env.JWT_TOKEN_SECRET);
   });
 
   describe("##creating habits", function () {
@@ -40,6 +42,7 @@ describe("#Testing habit routes and such", function () {
       chai
         .request(server)
         .post("/api/habits")
+        .set("token", token)
         .send(goodTestHabit)
         .end(function (err, res) {
           expect(res.status).to.equal(200);
@@ -57,9 +60,8 @@ describe("#Testing habit routes and such", function () {
           done();
         });
     });
-
     describe("###bad habit validation check", function () {
-      it("no userId present in request", function (done) {
+      it("no token present in header", function (done) {
         const noUserIdHabit = {
           title: "we're doing a bad thing",
           frequency: "monthly",
@@ -70,7 +72,7 @@ describe("#Testing habit routes and such", function () {
           .send(noUserIdHabit)
           .end(function (err, res) {
             expect(res.status).to.equal(400);
-            expect(res.text).to.equal("invalid request");
+            expect(res.text).to.equal("Unable to Authenticate user");
             done();
           });
       });
@@ -78,11 +80,11 @@ describe("#Testing habit routes and such", function () {
         const noUserIdHabit = {
           title: `we're doing a bad thing`,
           frequency: "bi-monthly",
-          userId: goodTestHabit.userId,
         };
         chai
           .request(server)
           .post("/api/habits")
+          .set("token", token)
           .send(noUserIdHabit)
           .end(function (err, res) {
             expect(res.status).to.equal(400);
@@ -92,25 +94,11 @@ describe("#Testing habit routes and such", function () {
       it("no frequency present in request", function (done) {
         const noUserIdHabit = {
           title: `we're doing a bad thing`,
-          userId: goodTestHabit.userId,
         };
         chai
           .request(server)
           .post("/api/habits")
-          .send(noUserIdHabit)
-          .end(function (err, res) {
-            expect(res.status).to.equal(400);
-            done();
-          });
-      });
-      it("no frequency present in request", function (done) {
-        const noUserIdHabit = {
-          title: `we're doing a bad thing`,
-          userId: goodTestHabit.userId,
-        };
-        chai
-          .request(server)
-          .post("/api/habits")
+          .set("token", token)
           .send(noUserIdHabit)
           .end(function (err, res) {
             expect(res.status).to.equal(400);
@@ -120,11 +108,11 @@ describe("#Testing habit routes and such", function () {
       it("no title present in request", function (done) {
         const noUserIdHabit = {
           frequency: "bi-monthly",
-          userId: goodTestHabit.userId,
         };
         chai
           .request(server)
           .post("/api/habits")
+          .set("token", token)
           .send(noUserIdHabit)
           .end(function (err, res) {
             expect(res.status).to.equal(400);
@@ -138,7 +126,7 @@ describe("#Testing habit routes and such", function () {
       chai
         .request(server)
         .get("/api/habits")
-        .send({ userId: goodTestHabit.userId })
+        .set("token", token)
         .end(function (err, res) {
           expect(res.status).to.equal(200);
           expect(res.body).to.be.an("array");
@@ -146,14 +134,14 @@ describe("#Testing habit routes and such", function () {
         });
     });
     describe("###failing habit get", function () {
-      it("missing userId", function (done) {
+      it("missing token", function (done) {
         chai
           .request(server)
           .get("/api/habits")
           .send({ userId: null })
           .end(function (err, res) {
             expect(res.status).to.equal(400);
-            expect(res.text).to.equal("invalid user");
+            expect(res.text).to.equal("Unable to Authenticate user");
             done();
           });
       });
@@ -169,6 +157,7 @@ describe("#Testing habit routes and such", function () {
       chai
         .request(server)
         .patch("/api/habits")
+        .set("token",token)
         .send(updateObj)
         .end(function (err, res) {
           expect(res.status).to.equal(200);
@@ -191,6 +180,7 @@ describe("#Testing habit routes and such", function () {
       chai
         .request(server)
         .patch("/api/habits")
+        .set("token",token)
         .send(updateObj)
         .end(function (err, res) {
           expect(res.status).to.equal(200);
@@ -214,6 +204,7 @@ describe("#Testing habit routes and such", function () {
         chai
           .request(server)
           .patch("/api/habits")
+          .set("token",token)
           .send(failedupdate1)
           .end(function (err, res) {
             expect(res.status).to.equal(400);
@@ -230,6 +221,7 @@ describe("#Testing habit routes and such", function () {
         chai
           .request(server)
           .patch("/api/habits")
+          .set("token",token)
           .send(failedupdate1)
           .end(function (err, res) {
             expect(res.status).to.equal(400);
@@ -246,6 +238,7 @@ describe("#Testing habit routes and such", function () {
         chai
           .request(server)
           .patch("/api/habits")
+          .set("token",token)
           .send(failedupdate1)
           .end(function (err, res) {
             expect(res.status).to.equal(400);
@@ -255,93 +248,87 @@ describe("#Testing habit routes and such", function () {
       });
     });
   });
-  describe("##Testing Habit Tracking", function(){
-    it("successful tracking",function(done){
+  describe("##Testing Habit Tracking", function () {
+    it("successful tracking", function (done) {
       chai
+        .request(server)
+        .patch("/api/habits/track")
+        .set("token",token)
+        .send({ habitId: goodHabitReturn._id })
+        .end(function (err, res) {
+          expect(res.status).to.equal(200);
+          expect(res.body).to.be.an("object");
+          done();
+        });
+    });
+    describe("###Tracking fail cases", function () {
+      it("tracking before the frequency has passed", function (done) {
+        chai
           .request(server)
           .patch("/api/habits/track")
+          .set("token",token)
           .send({ habitId: goodHabitReturn._id })
           .end(function (err, res) {
-            expect(res.status).to.equal(200);
-            expect(res.body).to.be.an('object');
+            expect(res.status).to.equal(400);
+            expect(res.text).to.equal(
+              `you haven't waited long enough to track again`
+            );
             done();
           });
-    });
-    describe("###Tracking fail cases", function(){
-      it("tracking before the frequency has passed",function(done){
-        chai
-            .request(server)
-            .patch("/api/habits/track")
-            .send({ habitId: goodHabitReturn._id })
-            .end(function (err, res) {
-              expect(res.status).to.equal(400);
-              expect(res.text).to.equal(`you haven't waited long enough to track again`);
-              done();
-            });
       });
-      it("Missing habitId",function(done){
+      it("Missing habitId", function (done) {
         chai
           .request(server)
           .patch("/api/habits/track")
-          .send({habitId : null})
-          .end(function (err,res){
+          .set("token",token)
+          .send({ habitId: null })
+          .end(function (err, res) {
             expect(res.status).to.equal(400);
-            expect(res.text).to.equal('invalid request');
+            expect(res.text).to.equal("invalid request");
             done();
           });
       });
     });
   });
-  describe('##Testing Habit Deletes',function(){
-    describe('###Delete fails',function(){
-      it('no ids passed',function(done){
+  describe("##Testing Habit Deletes", function () {
+    describe("###Delete fails", function () {
+      it("no ids passed", function (done) {
         chai
           .request(server)
           .delete("/api/habits")
+          .set("token",token)
           .send({
             userId: goodTestHabit.userId,
-            habitIds : []
+            habitIds: [],
           })
-          .end(function (err,res){
+          .end(function (err, res) {
             expect(res.status).to.equal(400);
-            expect(res.text).to.equal('invalid request');
-            done();
-          });
-      });
-      it('missing userId',function(done){
-        chai
-          .request(server)
-          .delete("/api/habits")
-          .send({
-            userId: null,
-            habitIds : [goodHabitReturn._id]
-          })
-          .end(function (err,res){
-            expect(res.status).to.equal(400);
-            expect(res.text).to.equal('invalid request');
+            expect(res.text).to.equal("invalid request");
             done();
           });
       });
     });
-    describe("###successfuly delete",function(){
-      it(`let's delete a habit`,function(done){
+    describe("###successfuly delete", function () {
+      it(`let's delete a habit`, function (done) {
         const deleteObj = {
-          userId: goodTestHabit.userId,
-          habitIds : [goodHabitReturn._id]
-        }
+          habitIds: [goodHabitReturn._id],
+        };
         chai
           .request(server)
           .delete("/api/habits")
+          .set("token",token)
           .send({
             userId: goodTestHabit.userId,
-            habitIds : [goodHabitReturn._id]
+            habitIds: [goodHabitReturn._id],
           })
-          .end(function(err,res){
+          .end(function (err, res) {
             expect(res.status).to.equal(200);
-            expect(res.text).to.equal(`${deleteObj.habitIds.length} habit(s) removed`);
+            expect(res.text).to.equal(
+              `${deleteObj.habitIds.length} habit(s) removed`
+            );
             done();
-          })
+          });
       });
-    }); 
+    });
   });
 });
