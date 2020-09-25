@@ -5,12 +5,17 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 //models
 const User = require('../models/user');
+//helpers
+const { validateRegistrationData, loginValidation } = require("../helpers/inputValidation");
 
-router.post('/register',async (req,res)=>{
+router.post('/register',validateRegistrationData, async (req,res)=>{
     const{email,password} = req.body;
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    
+    const emailUsed = await User.findOne({email : email})
+    if(emailUsed){
+      return res.status(400).send('cannot use this email');
+    }
     const newUser = await new User({
         email : email,
         password : hashedPassword
@@ -27,7 +32,7 @@ router.post('/register',async (req,res)=>{
     })
 })
 
-router.post('/login', async (req,res) => {
+router.post('/login',loginValidation, async (req,res) => {
   const { email, password } = req.body;
 
   const user = await User.findOne({ email: email });

@@ -13,35 +13,34 @@ const User = require("../models/user");
 
 chai.use(chaiHttp);
 
-describe("User Register and Login Tests", function () {
- 
-  describe(`Testing /api/user/register endpoint`, function () {
-    before(function (done) {
-      mongoose
-        .connect(process.env.TEST_MONGO_URI, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
-        })
-        .then(() => {
-          console.log("connected for testing");
-        })
-        .catch((e) => {
-          console.error(e);
-        });
-      User.deleteMany({}, (err) => {
-        if (err) {
-          console.error(err);
-        } else {
-          console.log("purged the user table");
-        }
+describe("#User Register and Login Tests", function () {
+  before(function (done) {
+    mongoose
+      .connect(process.env.TEST_MONGO_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      })
+      .then(() => {
+        console.log("connected for testing");
+      })
+      .catch((e) => {
+        console.error(e);
       });
-      done();
+    User.deleteMany({}, (err) => {
+      if (err) {
+        console.error(err);
+      } else {
+        console.log("purged the user table");
+      }
     });
-    const user = {
-      email: "user1@test.com",
-      password: "test12345",
-    };
-    it("#creating new user", function (done) {
+    done();
+  });
+  const user = {
+    email: "user1@test.com",
+    password: "test12345",
+  };
+  describe(`##Testing /api/user/register endpoint`, function () {
+    it("creating new user", function (done) {
       chai
         .request(server)
         .post("/api/user/register")
@@ -53,8 +52,52 @@ describe("User Register and Login Tests", function () {
           done();
         });
     });
+    describe("###Fail cases for register",function(){
+      it("invalid email address", function(done){
+        const badEmailUser ={
+          email: "testbad.com",
+          password : "pass12345"
+        };
+        chai
+          .request(server)
+          .post("/api/user/register")
+          .send(badEmailUser)
+          .end(function(err,res){
+            expect(res.status).to.equal(400);
+            expect(res.text).to.equal('cannot create account with given information');
+            done();
+          });
+      });
+      it('password too short', function(done){
+        const shortPasswordUser = {
+          email : "validemail@email.com",
+          password : "Seven"
+        }
 
-    it("#logging in our new user", function (done) {
+        chai
+          .request(server)
+          .post("/api/user/register")
+          .send(shortPasswordUser)
+          .end(function(err,res){
+            expect(res.status).to.equal(400);
+            expect(res.text).to.equal('cannot create account with given information');
+            done();
+          });
+      });
+      it('email address has already been used', function(done){
+        chai
+        .request(server)
+        .post("/api/user/register")
+        .send(user)
+        .end(function (err, res) {
+          expect(res.status).to.equal(400);
+          expect(res.text).to.equal("cannot use this email");
+          done();
+        });
+      })
+    })
+  describe('##Testing /api/user/login endpoint',function(){
+    it("logging in our new user", function (done) {
       chai
         .request(server)
         .post("/api/user/login")
@@ -67,5 +110,69 @@ describe("User Register and Login Tests", function () {
           done();
         });
     });
+    describe('###Login Fail cases', function(){
+      it("email invalid",function(done){
+        const badEmailUser ={
+          email: "testbad.com",
+          password : "pass12345"
+        };
+        chai
+          .request(server)
+          .post("/api/user/login")
+          .send(badEmailUser)
+          .end(function(err,res){
+            expect(res.status).to.equal(400);
+            expect(res.text).to.equal('invalid login information');
+            done();
+          });
+      });
+      it("password too short",function(done){
+        const badPasswordUser ={
+          email: "test@bad.com",
+          password : "pass1"
+        };
+        chai
+          .request(server)
+          .post("/api/user/login")
+          .send(badPasswordUser)
+          .end(function(err,res){
+            expect(res.status).to.equal(400);
+            expect(res.text).to.equal('invalid login information');
+            done();
+          });
+      });
+      it("password invalid",function(done){
+        const wrongPasswordUser ={
+          email: "user1@test.com",
+          password: "test12346",
+        };
+        chai
+          .request(server)
+          .post("/api/user/login")
+          .send(wrongPasswordUser)
+          .end(function(err,res){
+            expect(res.status).to.equal(400);
+            expect(res.text).to.equal('invalid username or password');
+            done();
+          });
+      });
+      it("email not found",function(done){
+        const emailNotRegistered ={
+          email: "user21@test.com",
+          password: "test12346",
+        };
+        chai
+          .request(server)
+          .post("/api/user/login")
+          .send(emailNotRegistered)
+          .end(function(err,res){
+            expect(res.status).to.equal(400);
+            expect(res.text).to.equal('invalid username or password');
+            done();
+          });
+      });
+    });
+  });
+
   });
 });
