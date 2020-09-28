@@ -29,7 +29,7 @@ app.use(isAuth);
 //habit routes
 const habitRoute = require("./routes/habits");
 app.use("/api/habits", habitRoute);
-app.listen(3000, () => {
+app.listen(process.env.PORT, () => {
   console.log("listening on 3000");
 });
 module.exports = app;
