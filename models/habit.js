@@ -5,6 +5,10 @@ const habitSchema = new Schema({
         type : String,
         required: true
     },
+    desc : {
+        type : String,
+        required: true
+    },
     frequency : {
         type : String,
         required : true,

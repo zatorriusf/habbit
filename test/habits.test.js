@@ -21,6 +21,7 @@ chai.use(chaiHttp);
 describe("#Testing habit routes and such", function () {
   const goodTestHabit = {
     title: "test",
+    desc: "test description",
     frequency: "monthly",
   };
   //object to hold the result from the good habit post
@@ -51,6 +52,9 @@ describe("#Testing habit routes and such", function () {
             .to.have.property("title")
             .and.equal(goodTestHabit.title);
           expect(res.body)
+            .to.have.property("desc")
+            .and.equal(goodTestHabit.desc);
+          expect(res.body)
             .to.have.property("frequency")
             .and.equal(goodTestHabit.frequency);
           expect(res.body).to.have.property("totalActivity").and.equal(0);
@@ -77,43 +81,61 @@ describe("#Testing habit routes and such", function () {
           });
       });
       it("invalid frequency present in request", function (done) {
-        const noUserIdHabit = {
+        const invalidFrequencyHabit = {
           title: `we're doing a bad thing`,
           frequency: "bi-monthly",
+          desc: 'this should totes fail'
         };
         chai
           .request(server)
           .post("/api/habits")
           .set("token", token)
-          .send(noUserIdHabit)
+          .send(invalidFrequencyHabit)
           .end(function (err, res) {
             expect(res.status).to.equal(400);
             done();
           });
       });
       it("no frequency present in request", function (done) {
-        const noUserIdHabit = {
+        const noFrequencyHabit = {
           title: `we're doing a bad thing`,
+          desc: 'this should totes fail'
         };
         chai
           .request(server)
           .post("/api/habits")
           .set("token", token)
-          .send(noUserIdHabit)
+          .send(noFrequencyHabit)
           .end(function (err, res) {
             expect(res.status).to.equal(400);
             done();
           });
       });
       it("no title present in request", function (done) {
-        const noUserIdHabit = {
+        const noTitleHabit = {
           frequency: "bi-monthly",
+          desc: 'this should totes fail'
         };
         chai
           .request(server)
           .post("/api/habits")
           .set("token", token)
-          .send(noUserIdHabit)
+          .send(noTitleHabit)
+          .end(function (err, res) {
+            expect(res.status).to.equal(400);
+            done();
+          });
+      });
+      it("no description present in request", function (done) {
+        const noDescriptionHabit = {
+          frequency: "bi-weekly",
+          title: "bad habi"
+        };
+        chai
+          .request(server)
+          .post("/api/habits")
+          .set("token", token)
+          .send(noDescriptionHabit)
           .end(function (err, res) {
             expect(res.status).to.equal(400);
             done();
@@ -149,16 +171,17 @@ describe("#Testing habit routes and such", function () {
   });
   describe("##Updating an existing habit", function () {
     it("updating title", function (done) {
-      const updateObj = {
+      const updateTitleObj = {
         habitId: goodHabitReturn._id,
         title: "Updated title via Test",
         frequency: goodHabitReturn.frequency,
+        desc: goodHabitReturn.desc
       };
       chai
         .request(server)
         .patch("/api/habits")
         .set("token",token)
-        .send(updateObj)
+        .send(updateTitleObj)
         .end(function (err, res) {
           expect(res.status).to.equal(200);
           expect(res.body).to.be.an("object");
@@ -168,20 +191,51 @@ describe("#Testing habit routes and such", function () {
           expect(res.body)
             .to.have.property("frequency")
             .and.equal(goodHabitReturn.frequency);
+          expect(res.body)
+            .to.have.property("desc")
+            .and.equal(goodHabitReturn.desc);
           done();
         });
     });
-    it("updating frequency to daily", function (done) {
-      const updateObj = {
+    it("updating description", function (done) {
+      const updateDescriptionObj = {
         habitId: goodHabitReturn._id,
         title: goodHabitReturn.title,
-        frequency: "daily",
+        frequency: goodHabitReturn.frequency,
+        desc : 'great update'
       };
       chai
         .request(server)
         .patch("/api/habits")
         .set("token",token)
-        .send(updateObj)
+        .send(updateDescriptionObj)
+        .end(function (err, res) {
+          expect(res.status).to.equal(200);
+          expect(res.body).to.be.an("object");
+          expect(res.body)
+            .to.have.property("title")
+            .and.equal(goodHabitReturn.title);
+          expect(res.body)
+            .to.have.property("frequency")
+            .and.equal(goodHabitReturn.frequency);
+          expect(res.body)
+            .to.have.property("desc")
+            .and.equal('great update');
+          done();
+        });
+    });
+    it("updating frequency to daily", function (done) {
+      const updateFrequencyObj = {
+        habitId: goodHabitReturn._id,
+        title: goodHabitReturn.title,
+        frequency: "daily",
+        desc : goodHabitReturn.desc
+      };
+      chai
+        .request(server)
+        .patch("/api/habits")
+        .set("token",token)
+        .send(updateFrequencyObj)
         .end(function (err, res) {
           expect(res.status).to.equal(200);
           expect(res.body).to.be.an("object");
@@ -191,6 +245,9 @@ describe("#Testing habit routes and such", function () {
           expect(res.body)
             .to.have.property("frequency")
             .and.not.equal(goodHabitReturn.frequency);
+          expect(res.body)
+            .to.have.property("desc")
+            .and.equal(goodHabitReturn.desc);
           done();
         });
     });

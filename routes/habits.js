@@ -24,15 +24,15 @@ router
   //post new habit
   .post(async (req, res) => {
     
-    const {title,frequency} = req.body;
+    const {title,frequency,desc} = req.body;
     const userId = req.userId;
-    if(!userId || !title ||['daily','weekly','bi-weekly','monthly'].indexOf(frequency) ===-1){
+    if(!userId ||!desc|| !title ||['daily','weekly','bi-weekly','monthly'].indexOf(frequency) ===-1){
       res.status(400).send(`invalid request`);
       return;
     }
     const user = await User.findById(userId);
     if(user){
-        user.habits.push({title: title, frequency : frequency});
+        user.habits.push(req.body);
         user.save((err,user) =>{
             if(err){
                 console.error(err);
@@ -47,8 +47,8 @@ router
   })
   //update existing habit
   .patch(async (req,res)=>{
-    const{habitId,title,frequency} = req.body;
-    if(!habitId || !title ||['daily','weekly','bi-weekly','monthly'].indexOf(frequency) ===-1){
+    const{habitId,title,frequency,desc} = req.body;
+    if(!habitId || !desc || !title ||['daily','weekly','bi-weekly','monthly'].indexOf(frequency) ===-1){
       res.status(400).send(`invalid request`);
       return;
     }
@@ -56,6 +56,7 @@ router
     const habitIndex = user.habits.findIndex(id => id=habitId);
     user.habits[habitIndex].title = title;
     user.habits[habitIndex].frequency = frequency;
+    user.habits[habitIndex].desc = desc;
     const savedUser  = await user.save();
     if(savedUser){
       res.status(200).json(savedUser.habits[habitIndex]);
