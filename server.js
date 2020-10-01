@@ -14,7 +14,16 @@ if(process.env.NODE_ENV !== 'test'){
   .catch((e) => {
     console.error(e);
   });
-}
+};
+app.use((req,res,next) =>{
+  res.setHeader('Access-Control-Allow-Origin','*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST,GET,OPTIONS,PATCH');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, token');
+  if(req.method ==='OPTIONS'){
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 //default landing route
 app.get("/", (req, res) => {
