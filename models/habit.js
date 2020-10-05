@@ -14,12 +14,9 @@ const habitSchema = new Schema({
         required : true,
         enum : ['daily','weekly','bi-weekly','monthly']
     },
-    totalActivity : {
-        type: Number,
-        required : true,
-        default : 0
-
-    },
+    totalActivity : [{
+        type: Date
+    }],
     lastActivity : {
         type : Date,
         required : () => {

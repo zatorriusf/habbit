@@ -57,7 +57,7 @@ describe("#Testing habit routes and such", function () {
           expect(res.body)
             .to.have.property("frequency")
             .and.equal(goodTestHabit.frequency);
-          expect(res.body).to.have.property("totalActivity").and.equal(0);
+          expect(res.body).to.have.property("totalActivity").and.to.be.an("array");
 
           goodHabitReturn = res.body;
 
@@ -315,6 +315,8 @@ describe("#Testing habit routes and such", function () {
         .end(function (err, res) {
           expect(res.status).to.equal(200);
           expect(res.body).to.be.an("object");
+          expect(res.body).to.have.property("totalActivity")
+            .and.to.be.an('array');
           done();
         });
     });

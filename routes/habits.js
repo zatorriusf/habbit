@@ -122,14 +122,14 @@ router.route("/track")
     }
     
     habit.lastActivity = Date.now();
-    habit.totalActivity++;
+    habit.totalActivity.push(Date.now());
     habit.currentStreak++;
     if(habit.currentStreak > habit.longestStreak){
       habit.longestStreak = habit.currentStreak;
     }
     user.habits[habitIndex] = habit;
     const updatedUser = await user.save();
-    res.send(updatedUser);
+    res.send(user.habits[habitIndex]);
   })
       
   module.exports = router;
