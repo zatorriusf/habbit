@@ -16,7 +16,11 @@ if(process.env.NODE_ENV !== 'test'){
     console.error(e);
   });
 };
-app.use(cors());
+const corsOptions = {
+  origin: process.env.ORIGIN,
+  optionsSuccessStatus: 200
+}
+app.use(cors(corsOptions));
 
 //default landing route
 app.get("/", (req, res) => {
@@ -32,6 +36,6 @@ app.use(isAuth);
 const habitRoute = require("./routes/habits");
 app.use("/api/habits", habitRoute);
 app.listen(process.env.PORT, () => {
-  console.log("listening on 3000");
+  console.log(`listening on ${process.env.PORT}`);
 });
 module.exports = app;
