@@ -93,8 +93,12 @@ router.route("/track")
     }
     
     const user = await User.findOne({'habits._id' : habitId});
-    const habitIndex = user.habits.findIndex(id => id=habitId);
+    const habitIndex = user.habits.findIndex(habit => habit._id.toString()===habitId);
+    if(habitIndex === -1){
+      res.status(400).send('habit not found');
+    }
     let habit = user.habits[habitIndex];
+
     if(habit.lastActivity){
       let nextAvialableUpdate = new Date(habit.lastActivity);
     switch(habit.frequency){
